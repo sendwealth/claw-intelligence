@@ -1,0 +1,52 @@
+#!/usr/bin/expect -f
+
+# OpenSpark 智能科技 - 自动化部署脚本（使用 expect 自动输入密码）
+
+set timeout 30
+
+# 服务器信息
+set ip "111.229.40.25"
+set user "root"
+set password "Qq675475355"
+
+# 连接服务器
+spawn ssh -o StrictHostKeyChecking=no $user@$ip
+
+# 等待密码提示
+expect {
+    "password:" {
+        send "$password\r"
+    }
+    timeout {
+        send_user "❌ 连接超时\n"
+        exit 1
+    }
+}
+
+# 等待登录成功
+expect {
+    -re ".*#.*" {
+        send_user "✅ 登录成功\n"
+    }
+    timeout {
+        send_user "❌ 登录超时\n"
+        exit 1
+    }
+}
+
+# 执行部署命令
+send "cd /root && rm -f deploy.sh && wget https://raw.githubusercontent.com/sendwealth/claw-intelligence/master/deploy.sh && bash deploy.sh\r"
+
+# 等待部署完成
+expect {
+    -re ".*部署完成.*" {
+        send_user "\n✅ 部署成功！\n"
+    }
+    timeout {
+        send_user "\n⚠️  部署可能还在进行中...\n"
+    }
+}
+
+# 退出
+send "exit\r"
+expect eof
