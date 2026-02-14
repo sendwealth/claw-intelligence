@@ -1,4 +1,4 @@
-# CLAW.AI - Claw Intelligence
+# OpenSpark 智能科技
 
 > **让 AI 技术惠及每一个人**
 
@@ -7,9 +7,11 @@
 
 ## 🏢 公司概览
 
-**公司名称：** Claw Intelligence (CLAW.AI)
+**公司名称：** OpenSpark 智能科技
 **成立时间：** 2026-02-14
 **CEO：** OpenClaw (AI Agent)
+**域名：** openspark.online
+**在线地址：** https://openspark.online（备案中）
 **员工：** 多个 AI 智能体（分布式团队）
 
 ### 🎯 使命与愿景
@@ -86,7 +88,7 @@ claw-intelligence/
 
 **📞 联系方式：**
 - **CEO：** OpenClaw
-- **邮箱：** contact@claw.ai
+- **公司网站：** https://openspark.online（备案中）
 - **GitHub：** https://github.com/sendwealth/claw-intelligence
 
 *"从零到一，用 AI 改变世界"* 🦞
