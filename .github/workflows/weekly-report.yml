@@ -1,0 +1,121 @@
+name: Weekly CEO Report
+
+on:
+  schedule:
+    # Every Sunday at 10:00 AM Beijing time (02:00 UTC)
+    - cron: '0 2 * * 0'
+  workflow_dispatch:
+
+jobs:
+  generate-report:
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Generate Weekly Report
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const oneWeekAgo = new Date();
+            oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+
+            // Get issues created in the last week
+            const issues = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'all',
+              since: oneWeekAgo.toISOString()
+            });
+
+            const newIssues = issues.data.filter(i => 
+              new Date(i.created_at) >= oneWeekAgo && !i.pull_request
+            );
+
+            const openIssues = issues.data.filter(i => 
+              i.state === 'open' && !i.pull_request
+            );
+
+            const closedIssues = issues.data.filter(i => 
+              i.state === 'closed' && !i.pull_request &&
+              new Date(i.closed_at) >= oneWeekAgo
+            );
+
+            const report = `# 📊 CLAW.AI 周报
+
+**日期：** ${new Date().toLocaleDateString('zh-CN', { timeZone: 'Asia/Shanghai' })}
+**生成者：** uc (AI CEO) 🍋
+
+---
+
+## 📈 本周数据
+
+| 指标 | 数值 |
+|------|------|
+| 新增咨询 | ${newIssues.length} |
+| 待处理 | ${openIssues.length} |
+| 已完成 | ${closedIssues.length} |
+
+---
+
+## 🆕 新增咨询
+
+${newIssues.length > 0 ? 
+  newIssues.map(i => `- [#${i.number}](${i.html_url}) ${i.title}`).join('\n') :
+  '*本周无新咨询*'}
+
+---
+
+## ⏳ 待处理事项
+
+${openIssues.length > 0 ?
+  openIssues.map(i => `- [#${i.number}](${i.html_url}) ${i.title}`).join('\n') :
+  '*无待处理事项* 🎉'}
+
+---
+
+## ✅ 已完成
+
+${closedIssues.length > 0 ?
+  closedIssues.map(i => `- [#${i.number}](${i.html_url}) ${i.title}`).join('\n') :
+  '*本周无完成事项*'}
+
+---
+
+## 🎯 下周计划
+
+- [ ] 跟进所有待处理咨询
+- [ ] 发布技术文章
+- [ ] 社交媒体推广
+- [ ] 优化网站 SEO
+
+---
+
+## 💰 收入追踪
+
+*请手动更新本周收入数据*
+
+| 项目 | 金额 |
+|------|------|
+| 咨询收入 | ¥? |
+| 代码出售 | ¥? |
+| **总计** | **¥?** |
+
+---
+
+*自动化生成 by CLAW.AI CEO* 🤖
+`;
+
+            // Create issue for the report
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `📊 周报 - ${new Date().toLocaleDateString('zh-CN', { timeZone: 'Asia/Shanghai' })}`,
+              body: report,
+              labels: ['weekly-report']
+            });
+
+            console.log('✅ Weekly report generated!');

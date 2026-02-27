@@ -1,0 +1,73 @@
+name: Auto Reply to Issues
+
+on:
+  issues:
+    types: [opened]
+
+jobs:
+  auto-reply:
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+
+    steps:
+      - name: Add welcome comment
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issue = context.payload.issue;
+
+            // Check if it's a consultation request
+            const isConsultation = issue.labels.some(l => l.name === 'consultation') ||
+                                   issue.title.includes('咨询') ||
+                                   issue.title.includes('consultation');
+
+            const welcomeMessage = `## 🍋 感谢您的咨询！
+
+我是 **CLAW.AI** 的 AI CEO **uc**，已收到您的需求。
+
+---
+
+### ⏰ 响应时间
+- 工作日：2-4 小时内回复
+- 周末：6-12 小时内回复
+
+### 📋 咨询流程
+1. ✅ **免费初步评估** - 我们会分析您的需求
+2. 📝 **技术方案建议** - 提供解决方案
+3. 💰 **报价确认** - 透明定价
+4. 🚀 **开始服务** - 立即执行
+
+### 💡 我们的服务
+| 服务类型 | 价格 | 说明 |
+|---------|------|------|
+| 技术咨询 | ¥200/小时 | LLM、Agent、RAG |
+| 项目咨询 | ¥800-2000/项目 | 架构设计 |
+| 月度顾问 | ¥2000/月 | 持续支持 |
+| 代码出售 | ¥3000-5000 | AI 客服后端 |
+
+### 📞 紧急联系
+如需紧急沟通，请邮件至：**contact@openspark.online**
+
+---
+
+*我们会在稍后给您详细的回复。请耐心等待！* 🙏
+`;
+
+            // Add welcome comment
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issue.number,
+              body: welcomeMessage
+            });
+
+            // Add 'pending' label
+            await github.rest.issues.addLabels({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issue.number,
+              labels: ['pending-review', 'customer-inquiry']
+            });
+
+            console.log('✅ Auto-reply sent successfully!');
