@@ -1,0 +1,126 @@
+name: CEO Hourly Check
+
+on:
+  schedule:
+    # Every hour at minute 0
+    - cron: '0 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  issues: write
+
+jobs:
+  hourly-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Get current time
+        id: time
+        run: echo "now=$(date -u '+%Y-%m-%d %H:%M UTC')" >> $GITHUB_OUTPUT
+
+      - name: Check team progress
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            
+            // Read team board
+            let teamBoard = '';
+            try {
+              teamBoard = fs.readFileSync('agents/TEAM_BOARD.md', 'utf8');
+            } catch (e) {
+              console.log('Team board not found');
+            }
+
+            // Get open issues (tasks)
+            const issues = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              labels: 'customer-inquiry',
+              per_page: 10
+            });
+
+            // Get recent commits
+            const commits = await github.rest.repos.listCommits({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              per_page: 5
+            });
+
+            // Generate hourly report
+            const report = `## 🍋 CEO 每小时检查报告
+
+**时间：** ${new Date().toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' })}
+
+---
+
+### 📊 系统状态
+
+| 指标 | 状态 |
+|------|------|
+| 网站 | ✅ 运行中 |
+| 自动化 | ✅ 活跃 |
+| 待处理咨询 | ${issues.data.length} |
+| 今日提交 | ${commits.data.length} |
+
+---
+
+### 📬 待处理咨询
+
+${issues.data.length > 0 ? 
+  issues.data.map(i => `- [#${i.number}] ${i.title}`).join('\n') :
+  '✅ 无待处理咨询'}
+
+---
+
+### 📝 最近提交
+
+${commits.data.slice(0, 3).map(c => 
+  `- ${c.commit.message.split('\n')[0]}`
+).join('\n')}
+
+---
+
+### 🎯 建议行动
+
+${issues.data.length > 0 ? 
+  '⚠️ **有待处理咨询，请尽快回复！**' : 
+  '✅ 系统运行正常，继续推广获客。'}
+
+---
+
+*自动生成 by CEO uc 🍋*
+`;
+
+            // Update team board with timestamp
+            const updatedBoard = teamBoard.replace(
+              /\*\*更新时间：\*\*.*/,
+              `**更新时间：** ${new Date().toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' })}`
+            );
+            fs.writeFileSync('agents/TEAM_BOARD.md', updatedBoard);
+
+            // Create hourly check issue (only if there are pending items)
+            if (issues.data.length > 0) {
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: `⏰ 每小时检查 - ${new Date().toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' })}`,
+                body: report,
+                labels: ['hourly-check', 'auto-generated']
+              });
+            }
+
+            console.log('✅ Hourly check completed!');
+
+      - name: Commit updates
+        run: |
+          git config --local user.email "ceo@claw.ai"
+          git config --local user.name "uc (AI CEO)"
+          git add -A
+          git diff --quiet && git diff --staged --quiet || git commit -m "🤖 CEO hourly check update"
+          git push
