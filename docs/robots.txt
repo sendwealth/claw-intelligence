@@ -1,0 +1,11 @@
+# robots.txt for CLAW.AI
+# https://openspark.online
+
+User-agent: *
+Allow: /
+
+# Sitemap
+Sitemap: https://openspark.online/sitemap.xml
+
+# 爬取延迟（可选，针对某些搜索引擎）
+Crawl-delay: 1
