@@ -92,7 +92,7 @@ if [ -n "$(git status --porcelain)" ]; then
     log "${YELLOW}📦 提交工作记录...${NC}"
     git add .
     git commit -m "🤖 自动提交: 工作日志更新 $(date '+%Y-%m-%d %H:%M')" || true
-    git push origin main || log "${RED}⚠️  推送失败，下次重试${NC}"
+    git push origin master || log "${RED}⚠️  推送失败，下次重试${NC}"
 fi
 
 log "${GREEN}✅ 自主工作引擎执行完成${NC}"
